@@ -1,0 +1,51 @@
+services:
+  demo-app:
+    build: ./app
+    container_name: demo-app
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+
+  loadgen:
+    image: busybox:1.36
+    container_name: loadgen
+    command: ["sh", "/loadgen.sh"]
+    volumes:
+      - ./app/loadgen.sh:/loadgen.sh:ro
+    depends_on: [demo-app]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on: [demo-app, node-exporter]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus]
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,17 @@
+groups:
+  - name: demo-app-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(app_requests_total{status=~"5.."}[1m])) / sum(rate(app_requests_total[1m])) > 0.05
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 5% of requests are failing"
+      - alert: TargetDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.job }} is down"
